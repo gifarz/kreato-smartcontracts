@@ -1,0 +1,74 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+artifcats/
+cache/
+typechain-types/
+
+# Production
+*.tsbuildinfo
+next-env.d.ts
+
+# File uploads
+public/uploads
+
+# Contracts / Payment
+contracts/
+payment/
+
+notes
+
+# # .Github
+# .github/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Package manager locks (keep only one — remove the ones you don't use)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Testing
+/coverage
+.nyc_output
+
+# Cache
+.cache/
+.eslintcache
+.stylelintcache
+.turbo/
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+
+# JetBrains (WebStorm, IntelliJ, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
+
+# Misc
+*.pem
