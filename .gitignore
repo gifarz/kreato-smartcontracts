@@ -4,7 +4,7 @@ node_modules/
 .pnp.js
 
 # Next.js
-artifcats/
+artifacts/
 cache/
 typechain-types/
 
@@ -14,10 +14,6 @@ next-env.d.ts
 
 # File uploads
 public/uploads
-
-# Contracts / Payment
-contracts/
-payment/
 
 notes
 
