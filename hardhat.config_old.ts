@@ -70,7 +70,12 @@ const config: HardhatUserConfig = {
 
   // ─── Contract verification ───────────────────────
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY || "",  // single key, works for all chains
+    apiKey: {
+      mainnet: process.env.ETHERSCAN_API_KEY || "",
+      sepolia: process.env.ETHERSCAN_API_KEY || "",
+      base: process.env.ETHERSCAN_API_KEY || "",
+      baseSepolia: process.env.ETHERSCAN_API_KEY || "",
+    },
 
     customChains: [
       {

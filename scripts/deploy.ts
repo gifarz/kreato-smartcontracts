@@ -1,4 +1,5 @@
 import { ethers, network, run } from "hardhat";
+import { isAddress } from "ethers";
 
 function getEnvKeys(networkName: string) {
   switch (networkName) {
@@ -33,31 +34,62 @@ async function main() {
 
   console.log("Network:", network.name);
   console.log("Deployer:", deployer.address);
+  console.log("Platform Wallet:", platformWallet);
 
-  if (!platformWallet) throw new Error("Missing PLATFORM_WALLET");
+  if (!platformWallet || !isAddress(platformWallet)) {
+    throw new Error("Invalid or missing PLATFORM_WALLET");
+  }
+  let usdcAddress: string;
 
-  // ─── Deploy Mock USDC ─────────────────────────────
-  const MockERC20 = await ethers.getContractFactory("MockERC20");
-  const usdc = await MockERC20.deploy("USD Coin", "USDC", 6);
-  await usdc.waitForDeployment();
+  if (network.name === "mainnet") {
+    usdcAddress = process.env.USDC_MAINNET!;
+    console.log("Using real USDC:", usdcAddress);
+  } else if (network.name === "base") {
+    usdcAddress = process.env.USDC_BASE!;
+    console.log("Using real USDC (Base):", usdcAddress);
+  } else {
+    // ─── Deploy Mock USDC ─────────────────────────────
+    const MockERC20 = await ethers.getContractFactory("MockERC20");
+    const usdc = await MockERC20.deploy("USD Coin", "USDC", 6);
+    await usdc.waitForDeployment();
 
-  const usdcAddress = await usdc.getAddress();
-  console.log("\nMock USDC deployed to:", usdcAddress);
+    usdcAddress = await usdc.getAddress();
+    console.log("\nMock USDC deployed to:", usdcAddress);
 
-  // Mint ke diri sendiri
-  const mintAmount = ethers.parseUnits("1000", 6); // 1000 USDC
-  console.log("Minted 1000 USDC to:", deployer.address);
+    // Mint ke diri sendiri
+    const mintAmount = ethers.parseUnits("1000", 6); // 1000 USDC
+    console.log("Minted 1000 USDC to:", deployer.address);
 
-  const mintTx = await usdc.mint(deployer.address, mintAmount);
-  await mintTx.wait(); // 🔥 WAJIB
+    const mintTx = await usdc.mint(deployer.address, mintAmount);
+    await mintTx.wait(); // 🔥 WAJIB
+  }
 
   // ─── Deploy KreatoPayment ─────────────────────────
   const KreatoPayment = await ethers.getContractFactory("KreatoPayment");
-  const payment = await KreatoPayment.deploy(platformWallet);
-  await payment.waitForDeployment();
 
-  const paymentAddress = await payment.getAddress();
-  console.log("\nKreatoPayment deployed to:", paymentAddress);
+  let paymentAddress: string;
+
+  try {
+    const payment = await KreatoPayment.deploy(platformWallet);
+    await payment.waitForDeployment();
+    paymentAddress = await payment.getAddress();
+  } catch (e: any) {
+    // Known hardhat-ethers v3 bug: getTransaction() throws BAD_DATA for
+    // deployment txs because ethers v6 rejects null "to" field.
+    // The contract is already on-chain — recover address from receipt.
+    if (e?.code === "BAD_DATA" && e?.shortMessage?.includes("value.to")) {
+      const deployTx = await KreatoPayment.getDeployTransaction(platformWallet);
+      const [signer] = await ethers.getSigners();
+      const nonce = await signer.getNonce() - 1; // tx already sent
+      paymentAddress = ethers.getCreateAddress({
+        from: signer.address,
+        nonce,
+      });
+      console.warn("⚠️  Caught known hardhat-ethers bug — recovered address from CREATE derivation");
+    } else {
+      throw e;
+    }
+  }
 
   // ─── ENV output ───────────────────────────────────
   const keys = getEnvKeys(network.name);
